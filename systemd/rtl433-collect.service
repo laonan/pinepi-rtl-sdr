@@ -10,7 +10,9 @@ Type=simple
 User=__USER__
 EnvironmentFile=/etc/rtl433/rtl433.env
 # Runs from the venv the installer creates under the install dir, so Pillow is
-# available without touching the system Python.
+# available without touching the system Python. PYTHONPATH makes the package
+# importable regardless of the working directory.
+Environment=PYTHONPATH=__INSTALL_DIR__
 ExecStart=__INSTALL_DIR__/venv/bin/python -m rtl433_collector run
 WorkingDirectory=__INSTALL_DIR__
 Restart=always

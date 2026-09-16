@@ -153,16 +153,25 @@ def render_png(
         heatmap.total_events,
         heatmap.classified_events,
     )
-    draw.text((left, height - 44), footer, font=font_small, fill=_MUTED)
-
-    # Legend swatches: low -> high.
-    lx = grid_x0
     ly = height - 44
+    draw.text((left, ly), footer, font=font_small, fill=_MUTED)
+
+    # Legend swatches: low -> high. Right-aligned to the grid's right edge so
+    # it never collides with the footer text on the left.
+    swatch = 14
+    swatch_gap = 4
+    swatches_w = len(_LEVELS) * (swatch + swatch_gap) - swatch_gap
+    less_w = draw.textlength("less", font=font_small)
+    more_w = draw.textlength("more", font=font_small)
+    grid_right = grid_x0 + heatmap.hours * (cell + gap) - gap
+    legend_w = less_w + 8 + swatches_w + 8 + more_w
+    lx = grid_right - legend_w
+
     draw.text((lx, ly), "less", font=font_small, fill=_MUTED)
-    sx = lx + 34
+    sx = lx + less_w + 8
     for _, rgb in _LEVELS:
-        draw.rectangle([sx, ly, sx + 14, ly + 14], fill=rgb, outline=_GRID)
-        sx += 18
+        draw.rectangle([sx, ly, sx + swatch, ly + swatch], fill=rgb, outline=_GRID)
+        sx += swatch + swatch_gap
     draw.text((sx + 4, ly), "more", font=font_small, fill=_MUTED)
 
     img.save(dest, format="PNG")

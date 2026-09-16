@@ -389,7 +389,7 @@ else
     echo "  journalctl -u rtl433-collect -f"
     echo
     echo "Send a test snapshot now (renders + pushes immediately):"
-    echo "  sudo -u ${TARGET_USER} env \$(grep -v '^#' ${ENV_FILE} | xargs) \\"
+    echo "  sudo -u ${TARGET_USER} env PYTHONPATH=${INSTALL_DIR} \$(grep -v '^#' ${ENV_FILE} | xargs) \\"
     echo "       ${INSTALL_DIR}/venv/bin/python -m rtl433_collector snapshot"
     echo
     echo "After editing ${ENV_FILE}:"

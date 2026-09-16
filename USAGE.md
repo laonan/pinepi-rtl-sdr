@@ -195,14 +195,18 @@ like `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=...`. Put it in
 To test without waiting for 20:30 — this renders and pushes immediately:
 
 ```bash
-sudo -u pi env $(grep -v '^#' /etc/rtl433/rtl433.env | xargs) \
+sudo -u pi env PYTHONPATH=/opt/pinepi-rtl-sdr $(grep -v '^#' /etc/rtl433/rtl433.env | xargs) \
   /opt/pinepi-rtl-sdr/venv/bin/python -m rtl433_collector snapshot
 ```
+
+(`PYTHONPATH` makes the package importable no matter which directory you run
+from; replace `pi` with the user the service runs as.)
 
 Add `--dry-run` to render only and log the push instead of sending:
 
 ```bash
-... python -m rtl433_collector snapshot --dry-run
+sudo -u pi env PYTHONPATH=/opt/pinepi-rtl-sdr $(grep -v '^#' /etc/rtl433/rtl433.env | xargs) \
+  /opt/pinepi-rtl-sdr/venv/bin/python -m rtl433_collector snapshot --dry-run
 ```
 
 ### Adding another push channel

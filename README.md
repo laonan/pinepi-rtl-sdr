@@ -154,6 +154,49 @@ journalctl -u rtl433-collect -f
 sudo systemctl restart rtl433-collect
 ```
 
+## Verifying the collector
+
+After installing the collector, confirm the Python package actually landed and
+that a snapshot can be produced without waiting for the daily `DELIVER_AT` time.
+
+1. Check the package was fetched and installed:
+
+```bash
+ls -la /opt/pinepi-rtl-sdr/rtl433_collector/
+```
+
+If this directory is missing or empty, the installer ran before the collector
+files were pushed to GitHub — push them, then re-run the installer with
+`--role collector`.
+
+2. Set the WeCom webhook (the installer leaves it empty), then restart:
+
+```bash
+sudo nano /etc/rtl433/rtl433.env      # fill in WECOM_WEBHOOK_URL=...
+sudo systemctl restart rtl433-collect
+```
+
+3. Fire a test snapshot right now (renders + pushes immediately). Replace
+`alan` with the user the service runs as. `PYTHONPATH` makes the package
+importable regardless of the current directory:
+
+```bash
+sudo -u alan env PYTHONPATH=/opt/pinepi-rtl-sdr $(grep -v '^#' /etc/rtl433/rtl433.env | xargs) \
+  /opt/pinepi-rtl-sdr/venv/bin/python -m rtl433_collector snapshot
+```
+
+Add `--dry-run` to render the PNG only and log the push instead of sending it:
+
+```bash
+sudo -u alan env PYTHONPATH=/opt/pinepi-rtl-sdr $(grep -v '^#' /etc/rtl433/rtl433.env | xargs) \
+  /opt/pinepi-rtl-sdr/venv/bin/python -m rtl433_collector snapshot --dry-run
+```
+
+> `No module named rtl433_collector` means Python was run from a directory that
+> doesn't contain the package and `PYTHONPATH` wasn't set — add
+> `PYTHONPATH=/opt/pinepi-rtl-sdr` as shown above. The systemd service sets this
+> for you.
+
 ## Data flow
 
 ```
