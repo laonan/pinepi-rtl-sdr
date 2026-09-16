@@ -1,0 +1,17 @@
+[Unit]
+Description=rtl_433 raw JSON forwarder (tail -F | socat -> TCP collector)
+After=network-online.target rtl433-scan.service
+Wants=network-online.target
+# Never stop retrying, even after repeated fast failures.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=__USER__
+EnvironmentFile=/etc/rtl433/rtl433.env
+ExecStart=__INSTALL_DIR__/rtl433_forward.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

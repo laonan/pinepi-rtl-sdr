@@ -1,0 +1,9 @@
+__RTL433_RAW_FILE__ {
+    daily
+    rotate 2
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+}

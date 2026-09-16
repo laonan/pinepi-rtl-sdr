@@ -1,0 +1,17 @@
+[Unit]
+Description=rtl_433 China ISM-band scanner (writes raw JSON)
+After=network.target
+Wants=network.target
+# Never stop retrying, even after repeated fast failures (e.g. USB hiccups).
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=__USER__
+EnvironmentFile=/etc/rtl433/rtl433.env
+ExecStart=__INSTALL_DIR__/rtl433_china_scan.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

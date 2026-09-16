@@ -1,0 +1,9 @@
+# Local runtime data / logs (generated on the Pi, not part of the repo)
+rtl433_logs/
+*.json
+*.log
+*.out
+
+# Editor / OS cruft
+.DS_Store
+*.swp
