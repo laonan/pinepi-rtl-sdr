@@ -124,18 +124,25 @@ class DailySnapshot:
                 pass
 
 
-def _seconds_until(target_hour: int, target_minute: int, *, now: datetime) -> float:
-    """Seconds from ``now`` until the next ``HH:MM`` (today or tomorrow)."""
-    target = now.replace(
-        hour=target_hour, minute=target_minute, second=0, microsecond=0
-    )
-    if target <= now:
-        target += timedelta(days=1)
-    return (target - now).total_seconds()
+def _next_fire_after(reference: datetime, hour: int, minute: int) -> datetime:
+    """Return the first ``HH:MM`` strictly after ``reference``.
+
+    Used to compute the *next* scheduled time once the current one has fired.
+    """
+    candidate = reference.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    if candidate <= reference:
+        candidate += timedelta(days=1)
+    return candidate
 
 
 class Scheduler:
-    """Fires :meth:`DailySnapshot.run_once` every day at ``HH:MM`` local time."""
+    """Fires :meth:`DailySnapshot.run_once` every day at ``HH:MM`` local time.
+
+    The loop tracks an explicit next-fire timestamp and fires as soon as the
+    clock has reached or passed it (``now >= target``), then advances to the
+    following day. This can neither skip a day (no knife-edge "exactly now"
+    window) nor double-fire (the target only moves forward after a fire).
+    """
 
     def __init__(self, snapshot: DailySnapshot, *, hour: int, minute: int) -> None:
         self.snapshot = snapshot
@@ -145,21 +152,32 @@ class Scheduler:
 
     def run_forever(self) -> None:
         log.info("daily snapshot scheduled for %02d:%02d", self.hour, self.minute)
+        # First target: the next HH:MM at or after startup. If we start exactly
+        # at HH:MM we still want to fire, so compute from one second earlier.
+        target = _next_fire_after(
+            datetime.now() - timedelta(seconds=1), self.hour, self.minute
+        )
         while not self._stop.is_set():
-            wait = _seconds_until(self.hour, self.minute, now=datetime.now())
-            log.info("next snapshot in %.0f min", wait / 60)
-            # Wake up periodically so stop() is responsive and clock changes
-            # (NTP steps, DST) are re-evaluated rather than trusted for hours.
-            if self._stop.wait(min(wait, 300)):
-                break
-            if _seconds_until(self.hour, self.minute, now=datetime.now()) > 1:
+            now = datetime.now()
+            remaining = (target - now).total_seconds()
+
+            if remaining <= 0:
+                # Reached (or passed, e.g. after a clock jump) the target: fire.
+                try:
+                    self.snapshot.run_once()
+                except Exception:  # noqa: BLE001 — a bad cycle must not kill the loop
+                    log.exception("snapshot cycle failed")
+                # Schedule the next day's fire strictly after the one we just did.
+                target = _next_fire_after(target, self.hour, self.minute)
+                log.info("next snapshot at %s", target.isoformat(timespec="minutes"))
                 continue
-            try:
-                self.snapshot.run_once()
-            except Exception:  # noqa: BLE001 — a bad cycle must not kill the loop
-                log.exception("snapshot cycle failed")
-            # Avoid double-firing within the same minute.
-            self._stop.wait(61)
+
+            log.info("next snapshot in %.0f min", remaining / 60)
+            # Sleep in bounded chunks so stop() stays responsive and clock
+            # changes (NTP steps, DST) are re-evaluated rather than trusted for
+            # hours. Cap the chunk so we never overshoot the target.
+            if self._stop.wait(min(remaining, 60)):
+                break
 
     def stop(self) -> None:
         self._stop.set()

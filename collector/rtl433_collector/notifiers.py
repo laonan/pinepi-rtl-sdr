@@ -149,10 +149,17 @@ def build_notifier(channel: str, config: dict) -> Notifier:
     """
     channel = (channel or "").strip().lower()
     if channel == "wecom":
-        return WeComNotifier(
-            config.get("WECOM_WEBHOOK_URL", ""),
-            timeout=float(config.get("PUSH_TIMEOUT", 10)),
-        )
+        webhook = config.get("WECOM_WEBHOOK_URL", "")
+        if not webhook:
+            # A misconfigured push channel must not take the collector down:
+            # keep receiving + rendering, and just log instead of pushing.
+            log.warning(
+                "PUSH_CHANNEL=wecom but WECOM_WEBHOOK_URL is empty; "
+                "falling back to the log channel (no messages will be sent). "
+                "Set WECOM_WEBHOOK_URL in the env file and restart to enable push."
+            )
+            return LogNotifier()
+        return WeComNotifier(webhook, timeout=float(config.get("PUSH_TIMEOUT", 10)))
     if channel in ("log", "none", ""):
         return LogNotifier()
     raise ValueError(f"unknown push channel: {channel!r}")
