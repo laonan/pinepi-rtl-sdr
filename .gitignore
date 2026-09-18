@@ -4,6 +4,10 @@ rtl433_logs/
 *.log
 *.out
 
+# Python bytecode cache
+__pycache__/
+*.pyc
+
 # Editor / OS cruft
 .DS_Store
 *.swp

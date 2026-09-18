@@ -27,6 +27,7 @@ from .heatmap import aggregate
 from .notifiers import Notifier, NotifyError
 from .render import render_png
 from .store import RawStore, Receiver, iter_json_lines
+from .weather import format_weather_block
 
 log = logging.getLogger("rtl433_collector.service")
 
@@ -88,6 +89,13 @@ class DailySnapshot:
             heatmap.end.strftime("%m-%d %H:%M"),
             heatmap.classified_events,
         )
+        # Append any weather/environment readings found in the rolled-out data.
+        # This is a second, independent pass over the archive so the heatmap
+        # aggregation (stats + classification) above is left completely intact.
+        if archive is not None:
+            weather = format_weather_block(iter_json_lines(archive))
+            if weather:
+                caption = f"{caption}\n{weather}"
         try:
             self.notifier.send_image_file(snapshot, caption=caption)
             log.info("pushed snapshot via %s", self.notifier.name)
