@@ -196,7 +196,7 @@ else
     fetch "collector/requirements.txt"     "${WORK_DIR}/requirements.txt"
     # Collector Python package modules.
     install -d -m 0755 "${WORK_DIR}/rtl433_collector"
-    for mod in __init__ __main__ config heatmap notifiers render service store; do
+    for mod in __init__ __main__ config heatmap notifiers render service store weather; do
         fetch "collector/rtl433_collector/${mod}.py" \
               "${WORK_DIR}/rtl433_collector/${mod}.py"
     done
